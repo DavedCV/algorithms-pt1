@@ -1,0 +1,72 @@
+import edu.princeton.cs.algs4.WeightedQuickUnionUF;
+
+public class Percolation {
+
+    boolean[][] grid;
+    WeightedQuickUnionUF uf;
+    int size;
+    private int virtualTopSite;
+    private int virtualButtonSite;
+    private int counterOpenSites;
+
+    public Percolation(int N){
+        size = N;
+        if (size < 0) throw new IllegalArgumentException();
+        grid = new boolean[size][size];
+        uf = new WeightedQuickUnionUF(size+2);
+        virtualTopSite = size;
+        virtualButtonSite = size + 1;
+    }
+
+    private boolean validateCornerCases(int index){
+        if (index <= 0 || index > size){
+            return false;
+        }
+    }
+
+    private int getUnidimensionalValue(int row, int column){
+        return size * row + column;
+    }
+
+    // opens the site (row, col) if it is not open already
+    public void open(int row, int col){
+        if (!validateCornerCases(row) || !validateCornerCases(col)){
+            throw new IllegalArgumentException();
+        }
+
+        // transform the original values in the range (1...size), in order to properly access the indexes in the grid
+        int transformedIndexRow = row - 1;
+        int transformedIndexColumn = col - 1;
+        int unidimensional = getUnidimensionalValue(transformedIndexRow, transformedIndexColumn);
+
+        grid[transformedIndexRow][transformedIndexColumn] = true;
+        counterOpenSites++;
+
+        // conditional to connect the virtual sites
+        if (transformedIndexRow == 0) uf.union(virtualTopSite, unidimensional);
+        else if (transformedIndexRow == size-1) uf.union(virtualButtonSite, unidimensional);
+
+        // connect the opened site to the adjacent sites if opened too
+        if (isOpen(transformedIndexRow + 1, transformedIndexColumn)) uf.union(unidimensional, getUnidimensionalValue(transformedIndexRow + 1, transformedIndexColumn));
+        if (isOpen(transformedIndexRow - 1, transformedIndexColumn)) uf.union(unidimensional, getUnidimensionalValue(transformedIndexRow - 1, transformedIndexColumn));
+
+        if (isOpen(transformedIndexRow, transformedIndexColumn + 1)) uf.union(unidimensional, getUnidimensionalValue(transformedIndexRow, transformedIndexColumn + 1));
+        if (isOpen(transformedIndexRow, transformedIndexColumn - 1)) uf.union(unidimensional, getUnidimensionalValue(transformedIndexRow, transformedIndexColumn - 1));
+    }
+
+    public boolean isOpen(int row, int column) {
+        return grid[row][column];
+    }
+
+    public boolean isFull(int row, int column){
+        return !grid[row][column];
+    }
+
+    public int numberOfOpenSites(){
+        return counterOpenSites;
+    }
+
+    public boolean percolates(){
+        return uf.find(virtualButtonSite) == uf.find(virtualTopSite);
+    }
+}
